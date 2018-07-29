@@ -3,15 +3,15 @@ const fs = require("fs"),
       com = require("commander"),
       excel = require("exceljs");
 
-const method = /[\s\t]+(\w*)(?=\:\s+function\s?\(\D*\)\s?\{[\n|\s*])/,
-      endBraket = /[\s\t]+\}\,\s*\n/,
+const method = /[\s\t]+([\w_]*)(=?\s?\:\s?function\s?\([\w\s\,\\\/*\-\>\<\[\]]*\))\s?\{/,
+      endBraket = /[\s\t]+\}\,\s*(?!.)/,
       prop = /[\s\t]+(\w*)(?=\s?:)/;
 
 class work {
     constructor(name) {
         this.name = name;
         this.workbook = new excel.Workbook();
-        this.worksheet = workbook.addWorksheet(name);
+        this.worksheet = this.workbook.addWorksheet(name);
     }
 
     addRow(data) {
@@ -19,7 +19,7 @@ class work {
     }
 
     writeFile() {
-        workbook.xlsx.writeFile(this.name + ".xlsx");
+        this.workbook.xlsx.writeFile(this.name + ".xlsx");
     }
 }
 
@@ -40,16 +40,18 @@ com
 
             if (isFunc && !isInsideFunc) {
                 if (!line.match(endBraket)) isInsideFunc = true;
-                workbookHelper.addRow(isFunc);
+
+                workbookHelper.addRow(isFunc[1]);
                 return;
             }
             
             if (!isInsideFunc){
                 var isProp = line.match(prop);
+
                 if (isProp) {
-                    worksheet.addRow(isProp[1]);
+                    workbookHelper.addRow(isProp[1]);
+                    return;
                 }
-                return;
             }
             
             if (isInsideFunc) {
@@ -66,4 +68,3 @@ com
 
 com
     .parse(process.argv);
-
